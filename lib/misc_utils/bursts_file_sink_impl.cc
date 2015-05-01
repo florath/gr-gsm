@@ -28,11 +28,18 @@
 #include "misc_utils/bursts_file_sink_impl.h"
 #include <sstream>
 #include <iomanip>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 
 namespace gr {
 namespace gsm {
 
 void bursts_file_sink_impl::bursts_process(pmt::pmt_t msg) {
+  if (file_fd == -1) {
+    return;
+  }
+
   pmt::pmt_t const header_plus_burst = pmt::cdr(msg);
 
   gsmtap_hdr const *const header =
@@ -43,24 +50,31 @@ void bursts_file_sink_impl::bursts_process(pmt::pmt_t msg) {
       pmt::blob_length(header_plus_burst) - sizeof(gsmtap_hdr);
 
   std::stringstream out;
-  out << std::setw(3) << (uint16_t)header->version << "," << std::setw(3)
-      << (uint16_t)header->hdr_len << "," << std::setw(3)
+  out << std::setw(1) << (uint16_t)header->version << "," << std::setw(1)
+      << (uint16_t)header->hdr_len << "," << std::setw(1)
       << (uint16_t)header->type << "," << std::setw(1)
       << (uint16_t)header->timeslot << "," << std::setw(5)
       << be16toh(header->arfcn) << "," << std::setw(4)
       << (int16_t)header->signal_dbm << "," << std::setw(4)
-      << (int16_t)header->snr_db << "," << std::setw(10)
+      << (int16_t)header->snr_db << "," << std::setw(7)
       << be32toh(header->frame_number) << "," << std::setw(3)
       << (uint16_t)header->sub_type << "," << std::setw(3)
       << (uint16_t)header->antenna_nr << "," << std::setw(3)
       << (uint16_t)header->sub_slot << "," << std::setw(3)
       << (uint16_t)header->res << ",";
   for (int i(0); i < burst_len; ++i) {
-     out << std::setw(1) << static_cast<int>(burst[i]);
+    out << std::setw(1) << static_cast<int>(burst[i]);
   }
   out << std::endl;
 
-  std::cout << out.str();
+  std::string::size_type const slen(out.str().length());
+
+  ssize_t const wres(::write(file_fd, out.str().c_str(), slen));
+  if (slen != wres) {
+    perror("bursts_file_sink:write error");
+    ::close(file_fd);
+    file_fd = -1;
+  }
 }
 
 bursts_file_sink::sptr bursts_file_sink::make(std::string const &filename) {
@@ -72,7 +86,14 @@ bursts_file_sink::sptr bursts_file_sink::make(std::string const &filename) {
  */
 bursts_file_sink_impl::bursts_file_sink_impl(std::string const &filename)
     : gr::block("bursts_printer", gr::io_signature::make(0, 0, 0),
-                gr::io_signature::make(0, 0, 0)) {
+                gr::io_signature::make(0, 0, 0)),
+      file_fd(open(filename.c_str(),
+                   O_WRONLY | O_APPEND | O_CREAT | O_NOCTTY | O_TRUNC,
+                   S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH)) {
+
+  if (file_fd == -1) {
+    perror("bursts_file_sink:open file error");
+  }
 
   message_port_register_in(pmt::mp("bursts"));
   set_msg_handler(
@@ -83,6 +104,10 @@ bursts_file_sink_impl::bursts_file_sink_impl(std::string const &filename)
 /*
  * Our virtual destructor.
  */
-bursts_file_sink_impl::~bursts_file_sink_impl() {}
+bursts_file_sink_impl::~bursts_file_sink_impl() {
+  if (file_fd != -1) {
+    ::close(file_fd);
+  }
+}
 }
 }

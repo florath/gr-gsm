@@ -34,6 +34,7 @@ public:
 
 private:
   void bursts_process(pmt::pmt_t msg);
+  int file_fd;
 };
 }
 }
