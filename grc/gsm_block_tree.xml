@@ -34,6 +34,7 @@
     <cat>
       <name>Utilities</name>
       <block>gsm_bursts_printer</block>
+      <block>gsm_bursts_file_sink</block>
       <block>gsm_extract_system_info</block>
       <block>gsm_controlled_rotator_cc</block>
       <block>gsm_controlled_const_source_f</block>

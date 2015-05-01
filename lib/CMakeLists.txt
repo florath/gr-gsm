@@ -43,7 +43,9 @@ list(APPEND gsm_sources
     decryption/decryption_impl.cc
 )
 
-add_library(gnuradio-gsm SHARED ${gsm_sources})
+add_library(gnuradio-gsm SHARED ${gsm_sources}
+    misc_utils/bursts_file_sink_impl.cc
+    misc_utils/bursts_file_sink_impl.cc)
 target_link_libraries(gnuradio-gsm ${Boost_LIBRARIES} ${GNURADIO_RUNTIME_LIBRARIES} ${VOLK_LIBRARIES}
 # libraries required by plotting.h - have troubles to be installed by pybombs
 #    boost_iostreams
