@@ -26,11 +26,13 @@
 #include <gnuradio/io_signature.h>
 #include <grgsm/gsmtap.h>
 #include "misc_utils/bursts_file_source_impl.h"
+#include "receiver/gsm_constants.h"
 #include <sstream>
 #include <iomanip>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <unistd.h>
 
 namespace gr {
 namespace gsm {
@@ -41,10 +43,48 @@ void bursts_file_source_impl::bursts_process() {
   }
   std::cout << "Process bursts" << std::endl;
 
-  for (int i(0); i < 10; ++i) {
-    std::cout << "Sending burst" << std::endl;
-    pmt::pmt_t burst;
-    message_port_pub(pmt::mp("bursts"), burst);
+  char buf[198];
+  while (true) {
+    ssize_t const rres(::read(file_fd, buf, 197));
+    if (rres == 0) {
+      std::cout << "Read EOF" << std::endl;
+      return;
+    }
+
+    if (rres != 197) {
+      std::cout << "Read Invalid Byte Cnt" << std::endl;
+      return;
+    }
+
+    boost::scoped_ptr<gsmtap_hdr> tap_header(new gsmtap_hdr());
+    tap_header->version = atoi(buf + 0);
+    tap_header->hdr_len = atoi(buf + 2);
+    tap_header->type = atoi(buf + 4);
+    tap_header->timeslot = atoi(buf + 6);
+    tap_header->arfcn = atoi(buf + 8);
+    tap_header->signal_dbm = atoi(buf + 14);
+    tap_header->snr_db = atoi(buf + 19);
+    tap_header->frame_number = atol(buf + 24);
+    tap_header->sub_type = atoi(buf + 32);
+    tap_header->antenna_nr = atoi(buf + 36);
+    tap_header->sub_slot = atoi(buf + 40);
+    tap_header->res = atoi(buf + 44);
+
+    int8_t burst_buf[BURST_SIZE];
+    for (int i(48); i < 196; ++i) {
+      if (buf[i] == '0') {
+        burst_buf[i - 48] = 0;
+      } else {
+        burst_buf[i - 48] = 1;
+      }
+    }
+    std::cout << "Sending burst: " << tap_header->frame_number << std::endl;
+    int8_t header_plus_burst[sizeof(gsmtap_hdr) + BURST_SIZE];
+    memcpy(header_plus_burst, tap_header.get(), sizeof(gsmtap_hdr));
+    memcpy(header_plus_burst + sizeof(gsmtap_hdr), burst_buf, BURST_SIZE);
+    pmt::pmt_t blob_header_plus_burst =
+        pmt::make_blob(header_plus_burst, sizeof(gsmtap_hdr) + BURST_SIZE);
+    message_port_pub(pmt::mp("bursts"), blob_header_plus_burst);
   }
 
   return;
