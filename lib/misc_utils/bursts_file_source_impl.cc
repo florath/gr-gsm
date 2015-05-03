@@ -35,12 +35,23 @@
 namespace gr {
 namespace gsm {
 
-void bursts_file_source_impl::bursts_process(pmt::pmt_t msg) {
+void bursts_file_source_impl::bursts_process() {
   if (file_fd == -1) {
     return;
   }
+  std::cout << "Process bursts" << std::endl;
+
+  for (int i(0); i < 10; ++i) {
+    std::cout << "Sending burst" << std::endl;
+    pmt::pmt_t burst;
+    message_port_pub(pmt::mp("bursts"), burst);
+  }
+
+  return;
+
   abort();
 
+#if 0
   pmt::pmt_t const header_plus_burst = pmt::cdr(msg);
 
   gsmtap_hdr const *const header =
@@ -76,6 +87,7 @@ void bursts_file_source_impl::bursts_process(pmt::pmt_t msg) {
     ::close(file_fd);
     file_fd = -1;
   }
+#endif
 }
 
 bursts_file_source::sptr bursts_file_source::make(std::string const &filename) {
@@ -86,20 +98,17 @@ bursts_file_source::sptr bursts_file_source::make(std::string const &filename) {
  * The private constructor
  */
 bursts_file_source_impl::bursts_file_source_impl(std::string const &filename)
-    : gr::block("bursts_printer", gr::io_signature::make(0, 0, 0),
+    : gr::block("bursts_file_source", gr::io_signature::make(0, 0, 0),
                 gr::io_signature::make(0, 0, 0)),
-      file_fd(open(filename.c_str(),
-                   O_WRONLY | O_APPEND | O_CREAT | O_NOCTTY | O_TRUNC,
-                   S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH)) {
+      file_fd(open(filename.c_str(), O_RDONLY | O_NOCTTY)) {
 
   if (file_fd == -1) {
     perror("bursts_file_source:open file error");
   }
 
-  message_port_register_in(pmt::mp("bursts"));
-  set_msg_handler(
-      pmt::mp("bursts"),
-      boost::bind(&bursts_file_source_impl::bursts_process, this, _1));
+  message_port_register_out(pmt::mp("bursts"));
+
+  bursts_process();
 }
 
 /*
@@ -110,5 +119,15 @@ bursts_file_source_impl::~bursts_file_source_impl() {
     ::close(file_fd);
   }
 }
+
+#if 0
+int bursts_file_source_impl::work(int noutput_items,
+                                  gr_vector_const_void_star &input_items,
+                                  gr_vector_void_star &output_items) {
+  std::cout << "bursts_file_source_impl::work noutput_items:" << noutput_items
+            << std::endl;
+  return 0;
+}
+#endif
 }
 }

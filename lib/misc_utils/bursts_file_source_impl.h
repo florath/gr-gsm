@@ -33,7 +33,7 @@ public:
   ~bursts_file_source_impl();
 
 private:
-  void bursts_process(pmt::pmt_t msg);
+  void bursts_process();
   int file_fd;
 };
 }

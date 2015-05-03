@@ -12,10 +12,10 @@
     <type>string</type>
   </param>
 
-  <sink>
+  <source>
     <name>bursts</name>
     <type>message</type>
-  </sink>
+  </source>
 
   <doc>
 Read bursts from a file.
