@@ -1,0 +1,27 @@
+<?xml version="1.0"?>
+<block>
+  <name>Bursts File Source</name>
+  <key>gsm_bursts_file_source</key>
+  <import>import grgsm</import>
+  <import>import pmt</import>
+  <make>grgsm.bursts_file_source($filename)</make>
+
+  <param>
+    <name>Filename</name>
+    <key>filename</key>
+    <type>string</type>
+  </param>
+
+  <sink>
+    <name>bursts</name>
+    <type>message</type>
+  </sink>
+
+  <doc>
+Read bursts from a file.
+The files re-evaluated many times - without the need to
+store the complete raw measurements.
+
+Written by Andre Florath &lt;andre@florath.net&gt;)</doc>
+ 
+</block>

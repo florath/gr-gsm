@@ -27,5 +27,6 @@ install(FILES
     controlled_const_source_f.h
     message_printer.h 
     bursts_file_sink.h
+    bursts_file_source.h
     tmsi_dumper.h DESTINATION include/grgsm/misc_utils
 )

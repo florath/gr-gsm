@@ -2,7 +2,7 @@
 ##################################################
 # Gnuradio Python Flow Graph
 # Title: Airprobe Rtlsdr
-# Generated: Tue Apr 28 22:47:46 2015
+# Generated: Sat May  2 11:54:35 2015
 ##################################################
 
 from PyQt4 import Qt
@@ -20,12 +20,11 @@ import osmosdr
 import pmt
 import sip
 import sys
-import time
 
 from distutils.version import StrictVersion
 class airprobe_rtlsdr(gr.top_block, Qt.QWidget):
 
-    def __init__(self, fc=939.4e6, gain=30, samp_rate=2000000.052982, ppm=0):
+    def __init__(self, gain_default=50, ppm_default=70, fc_default=955.22e6, samp_rate=2.4e6):
         gr.top_block.__init__(self, "Airprobe Rtlsdr")
         Qt.QWidget.__init__(self)
         self.setWindowTitle("Airprobe Rtlsdr")
@@ -52,17 +51,17 @@ class airprobe_rtlsdr(gr.top_block, Qt.QWidget):
         ##################################################
         # Parameters
         ##################################################
-        self.fc = fc
-        self.gain = gain
+        self.gain_default = gain_default
+        self.ppm_default = ppm_default
+        self.fc_default = fc_default
         self.samp_rate = samp_rate
-        self.ppm = ppm
 
         ##################################################
         # Variables
         ##################################################
-        self.ppm_slider = ppm_slider = ppm
-        self.g_slider = g_slider = gain
-        self.fc_slider = fc_slider = fc
+        self.ppm_slider = ppm_slider = ppm_default
+        self.g_slider = g_slider = gain_default
+        self.fc_slider = fc_slider = fc_default
         self.SDCCH = SDCCH = 6
         self.SACCH = SACCH = 0x80
         self.RACH = RACH = 3
@@ -118,13 +117,13 @@ class airprobe_rtlsdr(gr.top_block, Qt.QWidget):
             def setValue(self, value):
                 super(Qwt.QwtCounter, self).setValue(value)
         self._fc_slider_counter = qwt_counter_pyslot()
-        self._fc_slider_counter.setRange(925e6, 1990e6, 2e5)
+        self._fc_slider_counter.setRange(860e6, 960e6, 1e4)
         self._fc_slider_counter.setNumButtons(2)
         self._fc_slider_counter.setValue(self.fc_slider)
         self._fc_slider_tool_bar.addWidget(self._fc_slider_counter)
         self._fc_slider_counter.valueChanged.connect(self.set_fc_slider)
         self._fc_slider_slider = Qwt.QwtSlider(None, Qt.Qt.Horizontal, Qwt.QwtSlider.BottomScale, Qwt.QwtSlider.BgSlot)
-        self._fc_slider_slider.setRange(925e6, 1990e6, 2e5)
+        self._fc_slider_slider.setRange(860e6, 960e6, 1e4)
         self._fc_slider_slider.setValue(self.fc_slider)
         self._fc_slider_slider.setMinimumWidth(100)
         self._fc_slider_slider.valueChanged.connect(self.set_fc_slider)
@@ -143,50 +142,36 @@ class airprobe_rtlsdr(gr.top_block, Qt.QWidget):
         self.rtlsdr_source_0.set_antenna("", 0)
         self.rtlsdr_source_0.set_bandwidth(250e3, 0)
           
-        self.qtgui_freq_sink_x_0 = qtgui.freq_sink_c(
-        	1024, #size
+        self.qtgui_sink_x_0 = qtgui.sink_c(
+        	1024, #fftsize
         	firdes.WIN_BLACKMAN_hARRIS, #wintype
         	fc_slider, #fc
         	samp_rate, #bw
         	"", #name
-        	1 #number of inputs
+        	True, #plotfreq
+        	True, #plotwaterfall
+        	True, #plottime
+        	True, #plotconst
         )
-        self.qtgui_freq_sink_x_0.set_update_time(0.10)
-        self.qtgui_freq_sink_x_0.set_y_axis(-140, 10)
-        self.qtgui_freq_sink_x_0.enable_autoscale(False)
-        self.qtgui_freq_sink_x_0.enable_grid(False)
-        self.qtgui_freq_sink_x_0.set_fft_average(1.0)
+        self.qtgui_sink_x_0.set_update_time(1.0/10)
+        self._qtgui_sink_x_0_win = sip.wrapinstance(self.qtgui_sink_x_0.pyqwidget(), Qt.QWidget)
+        self.top_layout.addWidget(self._qtgui_sink_x_0_win)
         
-        labels = ["", "", "", "", "",
-                  "", "", "", "", ""]
-        widths = [1, 1, 1, 1, 1,
-                  1, 1, 1, 1, 1]
-        colors = ["blue", "red", "green", "black", "cyan",
-                  "magenta", "yellow", "dark red", "dark green", "dark blue"]
-        alphas = [1.0, 1.0, 1.0, 1.0, 1.0,
-                  1.0, 1.0, 1.0, 1.0, 1.0]
-        for i in xrange(1):
-            if len(labels[i]) == 0:
-                self.qtgui_freq_sink_x_0.set_line_label(i, "Data {0}".format(i))
-            else:
-                self.qtgui_freq_sink_x_0.set_line_label(i, labels[i])
-            self.qtgui_freq_sink_x_0.set_line_width(i, widths[i])
-            self.qtgui_freq_sink_x_0.set_line_color(i, colors[i])
-            self.qtgui_freq_sink_x_0.set_line_alpha(i, alphas[i])
+        self.qtgui_sink_x_0.enable_rf_freq(False)
         
-        self._qtgui_freq_sink_x_0_win = sip.wrapinstance(self.qtgui_freq_sink_x_0.pyqwidget(), Qt.QWidget)
-        self.top_layout.addWidget(self._qtgui_freq_sink_x_0_win)
+        
+          
         self.gsm_universal_ctrl_chans_demapper_0 = grgsm.universal_ctrl_chans_demapper(0, ([2,6,12,16,22,26,32,36,42,46]), ([BCCH,CCCH,CCCH,CCCH,CCCH,CCCH,CCCH,CCCH,CCCH,CCCH]))
         self.gsm_receiver_0 = grgsm.receiver(4, ([0]), ([]))
-        self.gsm_message_printer_1 = grgsm.message_printer(pmt.intern(""))
         self.gsm_input_0 = grgsm.gsm_input(
             ppm=0,
             osr=4,
-            fc=fc,
+            fc=fc_slider,
             samp_rate_in=samp_rate,
         )
         self.gsm_control_channels_decoder_0 = grgsm.control_channels_decoder()
-        self.gsm_clock_offset_control_0 = grgsm.clock_offset_control(fc)
+        self.gsm_clock_offset_control_0 = grgsm.clock_offset_control(fc_slider)
+        self.gsm_bursts_file_sink_0 = grgsm.bursts_file_sink("bursts.fifo")
         self.blocks_socket_pdu_0 = blocks.socket_pdu("UDP_CLIENT", "127.0.0.1", "4729", 10000, False)
 
         ##################################################
@@ -194,37 +179,43 @@ class airprobe_rtlsdr(gr.top_block, Qt.QWidget):
         ##################################################
         self.connect((self.gsm_input_0, 0), (self.gsm_receiver_0, 0))
         self.connect((self.rtlsdr_source_0, 0), (self.gsm_input_0, 0))
-        self.connect((self.rtlsdr_source_0, 0), (self.qtgui_freq_sink_x_0, 0))
+        self.connect((self.rtlsdr_source_0, 0), (self.qtgui_sink_x_0, 0))
 
         ##################################################
         # Asynch Message Connections
         ##################################################
         self.msg_connect(self.gsm_receiver_0, "C0", self.gsm_universal_ctrl_chans_demapper_0, "bursts")
         self.msg_connect(self.gsm_clock_offset_control_0, "ppm", self.gsm_input_0, "ppm_in")
-        self.msg_connect(self.gsm_control_channels_decoder_0, "msgs", self.gsm_message_printer_1, "msgs")
         self.msg_connect(self.gsm_universal_ctrl_chans_demapper_0, "bursts", self.gsm_control_channels_decoder_0, "bursts")
         self.msg_connect(self.gsm_control_channels_decoder_0, "msgs", self.blocks_socket_pdu_0, "pdus")
         self.msg_connect(self.gsm_receiver_0, "measurements", self.gsm_clock_offset_control_0, "measurements")
+        self.msg_connect(self.gsm_receiver_0, "C0", self.gsm_bursts_file_sink_0, "bursts")
 
     def closeEvent(self, event):
         self.settings = Qt.QSettings("GNU Radio", "airprobe_rtlsdr")
         self.settings.setValue("geometry", self.saveGeometry())
         event.accept()
 
-    def get_fc(self):
-        return self.fc
+    def get_gain_default(self):
+        return self.gain_default
 
-    def set_fc(self, fc):
-        self.fc = fc
-        self.gsm_input_0.set_fc(self.fc)
-        self.set_fc_slider(self.fc)
+    def set_gain_default(self, gain_default):
+        self.gain_default = gain_default
+        self.set_g_slider(self.gain_default)
 
-    def get_gain(self):
-        return self.gain
+    def get_ppm_default(self):
+        return self.ppm_default
 
-    def set_gain(self, gain):
-        self.gain = gain
-        self.set_g_slider(self.gain)
+    def set_ppm_default(self, ppm_default):
+        self.ppm_default = ppm_default
+        self.set_ppm_slider(self.ppm_default)
+
+    def get_fc_default(self):
+        return self.fc_default
+
+    def set_fc_default(self, fc_default):
+        self.fc_default = fc_default
+        self.set_fc_slider(self.fc_default)
 
     def get_samp_rate(self):
         return self.samp_rate
@@ -233,14 +224,7 @@ class airprobe_rtlsdr(gr.top_block, Qt.QWidget):
         self.samp_rate = samp_rate
         self.gsm_input_0.set_samp_rate_in(self.samp_rate)
         self.rtlsdr_source_0.set_sample_rate(self.samp_rate)
-        self.qtgui_freq_sink_x_0.set_frequency_range(self.fc_slider, self.samp_rate)
-
-    def get_ppm(self):
-        return self.ppm
-
-    def set_ppm(self, ppm):
-        self.ppm = ppm
-        self.set_ppm_slider(self.ppm)
+        self.qtgui_sink_x_0.set_frequency_range(self.fc_slider, self.samp_rate)
 
     def get_ppm_slider(self):
         return self.ppm_slider
@@ -263,10 +247,11 @@ class airprobe_rtlsdr(gr.top_block, Qt.QWidget):
 
     def set_fc_slider(self, fc_slider):
         self.fc_slider = fc_slider
+        self.gsm_input_0.set_fc(self.fc_slider)
         Qt.QMetaObject.invokeMethod(self._fc_slider_counter, "setValue", Qt.Q_ARG("double", self.fc_slider))
         Qt.QMetaObject.invokeMethod(self._fc_slider_slider, "setValue", Qt.Q_ARG("double", self.fc_slider))
         self.rtlsdr_source_0.set_center_freq(self.fc_slider, 0)
-        self.qtgui_freq_sink_x_0.set_frequency_range(self.fc_slider, self.samp_rate)
+        self.qtgui_sink_x_0.set_frequency_range(self.fc_slider, self.samp_rate)
 
     def get_SDCCH(self):
         return self.SDCCH
@@ -326,19 +311,19 @@ if __name__ == '__main__':
         except:
             print "Warning: failed to XInitThreads()"
     parser = OptionParser(option_class=eng_option, usage="%prog: [options]")
-    parser.add_option("-f", "--fc", dest="fc", type="eng_float", default=eng_notation.num_to_str(939.4e6),
-        help="Set fc [default=%default]")
-    parser.add_option("-g", "--gain", dest="gain", type="eng_float", default=eng_notation.num_to_str(30),
+    parser.add_option("-g", "--gain-default", dest="gain_default", type="eng_float", default=eng_notation.num_to_str(50),
         help="Set gain [default=%default]")
-    parser.add_option("-s", "--samp-rate", dest="samp_rate", type="eng_float", default=eng_notation.num_to_str(2000000.052982),
-        help="Set samp_rate [default=%default]")
-    parser.add_option("-p", "--ppm", dest="ppm", type="intx", default=0,
+    parser.add_option("-p", "--ppm-default", dest="ppm_default", type="intx", default=70,
         help="Set ppm [default=%default]")
+    parser.add_option("-f", "--fc-default", dest="fc_default", type="eng_float", default=eng_notation.num_to_str(955.22e6),
+        help="Set fc [default=%default]")
+    parser.add_option("-s", "--samp-rate", dest="samp_rate", type="eng_float", default=eng_notation.num_to_str(2.4e6),
+        help="Set samp_rate [default=%default]")
     (options, args) = parser.parse_args()
     if(StrictVersion(Qt.qVersion()) >= StrictVersion("4.5.0")):
         Qt.QApplication.setGraphicsSystem(gr.prefs().get_string('qtgui','style','raster'))
     qapp = Qt.QApplication(sys.argv)
-    tb = airprobe_rtlsdr(fc=options.fc, gain=options.gain, samp_rate=options.samp_rate, ppm=options.ppm)
+    tb = airprobe_rtlsdr(gain_default=options.gain_default, ppm_default=options.ppm_default, fc_default=options.fc_default, samp_rate=options.samp_rate)
     tb.start()
     tb.show()
     def quitting():

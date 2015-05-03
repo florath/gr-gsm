@@ -20,6 +20,7 @@
 #include "grgsm/misc_utils/message_printer.h"
 #include "grgsm/misc_utils/tmsi_dumper.h"
 #include "grgsm/misc_utils/bursts_file_sink.h"
+#include "grgsm/misc_utils/bursts_file_source.h"
 %}
 
 
@@ -52,3 +53,5 @@ GR_SWIG_BLOCK_MAGIC2(gsm, message_printer);
 GR_SWIG_BLOCK_MAGIC2(gsm, tmsi_dumper);
 %include "grgsm/misc_utils/bursts_file_sink.h"
 GR_SWIG_BLOCK_MAGIC2(gsm, bursts_file_sink);
+%include "grgsm/misc_utils/bursts_file_source.h"
+GR_SWIG_BLOCK_MAGIC2(gsm, bursts_file_source);
