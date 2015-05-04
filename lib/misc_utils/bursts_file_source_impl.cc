@@ -148,7 +148,7 @@ bursts_file_source_impl::bursts_file_source_impl(std::string const &filename)
 
   message_port_register_out(pmt::mp("bursts"));
 
-  bursts_process();
+  //  bursts_process();
 }
 
 /*

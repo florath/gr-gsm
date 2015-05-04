@@ -33,6 +33,8 @@ public:
   ~bursts_file_source_impl();
 
 private:
+  int work(const void *, const void *);
+
   void bursts_process();
   int file_fd;
 };
